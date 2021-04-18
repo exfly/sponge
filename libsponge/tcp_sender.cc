@@ -36,6 +36,7 @@ void TCPSender::fill_window() {
     if (!_segments_outstanding.empty() && _segments_outstanding.front().header().syn)
         return;
     if (!_stream.buffer_size() && !_stream.eof())
+        // Lab4 behavior: if incoming_seg.length_in_sequence_space() is not zero, send ack.
         return;
     if (_fin_sent)
         return;
@@ -124,6 +125,8 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 
 // See test code send_window.cc line 113 why the commented code is wrong.
 bool TCPSender::ack_valid(uint64_t abs_ackno) {
+    if (_segments_outstanding.empty())
+        return abs_ackno <= _next_seqno;
     return abs_ackno <= _next_seqno &&
            //  abs_ackno >= unwrap(_segments_outstanding.front().header().seqno, _isn, _next_seqno) +
            //          _segments_outstanding.front().length_in_sequence_space();
